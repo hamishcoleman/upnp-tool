@@ -99,12 +99,26 @@ sub show_actions {
     }
 }
 
+sub show_arguments {
+    my @arguments = @_;
+
+    my @sorted = sort { $a cmp $b } @arguments;
+    for my $argument (@sorted) {
+        printf("        %s\n",$argument);
+    }
+}
+
 sub show {
     my $self = shift;
     my $command = shift;
     my $filter_name = shift;
 
-    my @devices = $self->{ControlPoint}->getfiltereddevices($filter_name);
+    my @devices;
+    if ($filter_name =~ m/^http/) {
+        @devices = $self->{ControlPoint}->getdevicebyurl($filter_name);
+    } else {
+        @devices = $self->{ControlPoint}->getfiltereddevices($filter_name);
+    }
 
     my $filter_type = shift;
     if (defined($filter_type)) {
@@ -150,6 +164,17 @@ sub show {
     }
 
     show_actions(@actions);
+
+    # if we have more than one, show no more information
+    if (scalar(@actions) > 1) {
+        return 1;
+    }
+
+    my @arguments = $actions[0]->argumentlist_in();
+
+    show_arguments(@arguments);
+
+    return 1;
 }
 
 
