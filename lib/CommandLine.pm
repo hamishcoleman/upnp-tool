@@ -6,6 +6,7 @@ use HC::Net::UPnP::ControlPoint;
 use HC::Net::UPnP::Service;
 
 use URI;
+use Data::Dumper;
 
 our $VERBOSE = 0;
 my $METHODS = {
@@ -114,7 +115,7 @@ sub show {
     my $filter_name = shift;
 
     my @devices;
-    if ($filter_name =~ m/^http/) {
+    if (($filter_name||'') =~ m/^http/) {
         @devices = $self->{ControlPoint}->getdevicebyurl($filter_name);
     } else {
         @devices = $self->{ControlPoint}->getfiltereddevices($filter_name);
@@ -128,7 +129,7 @@ sub show {
     show_devices(@devices);
 
     # if we have more than one device, show no more information
-    if (scalar(@devices) > 1) {
+    if (scalar(@devices) != 1) {
         return 1;
     }
 
@@ -151,11 +152,13 @@ sub show {
     show_services(@services);
 
     # if we have more than one service, show no more information
-    if (scalar(@services) > 1) {
+    if (scalar(@services) != 1) {
         return 1;
     }
 
     my @actions = $services[0]->actionlist();
+
+    # TODO - apparently there are also state variables
     my $filter_action = shift;
     if (defined($filter_action)) {
         @actions = grep {
@@ -166,7 +169,7 @@ sub show {
     show_actions(@actions);
 
     # if we have more than one, show no more information
-    if (scalar(@actions) > 1) {
+    if (scalar(@actions) != 1) {
         return 1;
     }
 
@@ -174,7 +177,22 @@ sub show {
 
     show_arguments(@arguments);
 
-    return 1;
+    my $command2 = shift;
+    if (!defined($command2)) {
+        return 1;
+    }
+
+    # TODO - load kwargs from commandline
+
+    my $action_res = $services[0]->postaction($actions[0]->getname ());
+
+    if ($action_res->getstatuscode() != 200) {
+        printf("Error: Status: %i\n",$action_res->getstatuscode());
+        return 0;
+    }
+
+    print("\nResults:\n");
+    print(Dumper($action_res->getargumentlist()));
 }
 
 
