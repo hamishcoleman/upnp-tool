@@ -90,6 +90,15 @@ sub show_services {
     }
 }
 
+sub show_actions {
+    my @actions = @_;
+
+    my @sorted = sort { $a->getname() cmp $b->getname() } @actions;
+    for my $action (@sorted) {
+        printf("      %s\n",$action->getname());
+    }
+}
+
 sub show {
     my $self = shift;
     my $command = shift;
@@ -125,8 +134,22 @@ sub show {
         } @services;
     }
 
-
     show_services(@services);
+
+    # if we have more than one service, show no more information
+    if (scalar(@services) > 1) {
+        return 1;
+    }
+
+    my @actions = $services[0]->actionlist();
+    my $filter_action = shift;
+    if (defined($filter_action)) {
+        @actions = grep {
+            $_->getname() =~ m/$filter_action/
+        } @actions;
+    }
+
+    show_actions(@actions);
 }
 
 
