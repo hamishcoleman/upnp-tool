@@ -3,6 +3,7 @@ use warnings;
 use strict;
 
 use HC::Net::UPnP::ControlPoint;
+use HC::Net::UPnP::Service;
 
 use URI;
 
@@ -83,9 +84,7 @@ sub show_services {
         for my $service (@sorted) {
             printf("    %s\n",$service->getserviceid());
             if ($VERBOSE) {
-                my $baseurl = URI->new($service->getdevice()->getlocation());
-                my $scpdurl = URI->new($service->getscpdurl());
-                printf("      %s\n",$scpdurl->abs($baseurl));
+                printf("      %s\n",$service->getscpdurl_real());
             }
         }
     }
@@ -111,7 +110,7 @@ sub show {
     }
 
     my $filter_servicetype = shift;
-    my @services = $devices[0]->getservicelist();
+    my @services= HC::Net::UPnP::Service->import($devices[0]->getservicelist());
 
     if (defined($filter_servicetype)) {
         @services = grep {
