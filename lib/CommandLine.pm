@@ -9,27 +9,7 @@ use URI;
 use Data::Dumper;
 
 our $VERBOSE = 0;
-my $METHODS = {
-    show => \&show,
-};
 
-
-sub HANDLE {
-    my $class = shift;
-    my $self = {};
-    bless $self, $class;
-
-    $self->{ControlPoint} = HC::Net::UPnP::ControlPoint->new();
-
-    my $command = lc shift;
-    my @args = @_;
-
-    if (!defined($METHODS->{$command})) {
-        return undef;
-    }
-
-    return $METHODS->{$command}($self,$command,@args);
-}
 
 #
 sub show_devices {
@@ -109,9 +89,13 @@ sub show_arguments {
     }
 }
 
-sub show {
-    my $self = shift;
-    my $command = shift;
+sub HANDLE {
+    my $class = shift;
+    my $self = {};
+    bless $self, $class;
+
+    $self->{ControlPoint} = HC::Net::UPnP::ControlPoint->new();
+
     my $filter_name = shift;
 
     my @devices;
@@ -177,8 +161,8 @@ sub show {
 
     show_arguments(@arguments);
 
-    my $command2 = shift;
-    if (!defined($command2)) {
+    my $command = shift;
+    if (!defined($command)) {
         return 1;
     }
 

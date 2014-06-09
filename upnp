@@ -29,10 +29,6 @@ my @option_list = (
 sub main() {
     HC::Common::do_options($option,@option_list);
     return if (defined($option->{help}));
-    if (!defined($ARGV[0])) {
-        print "Error: Use --help for help\n";
-        exit 1;
-    }
 
     $CommandLine::VERBOSE = $option->{verbose};
 
