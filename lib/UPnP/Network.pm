@@ -65,7 +65,7 @@ sub search {
     }
 
     my $device = $self->{ControlPoint}->getdevicebyurl($filter);
-    $node = UPnP::NamedDevice->new($device);
+    $node = UPnP::Device->new($device);
     $node->parent($self);
 
     if (scalar(@_) > 0) {
