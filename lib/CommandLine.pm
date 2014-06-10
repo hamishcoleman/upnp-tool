@@ -13,9 +13,7 @@ sub HANDLE {
     my $self = {};
     bless $self, $class;
 
-    if ($VERBOSE) {
-        $HC::Tree::Node::VERBOSE=$VERBOSE;
-    }
+    $HC::Tree::Node::VERBOSE=$VERBOSE;
 
     my $t = UPnP::Network->new();
 
