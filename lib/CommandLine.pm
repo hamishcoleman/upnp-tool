@@ -20,6 +20,7 @@ sub HANDLE {
     my @nodes = $t->search(@_);
 
     for my $node (@nodes) {
+        next if (!defined($node));
         print $node->to_string_treenode();
 
         # if we have dug deep enough ..
