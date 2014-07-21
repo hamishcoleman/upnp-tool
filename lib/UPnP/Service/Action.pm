@@ -54,7 +54,10 @@ sub call {
     my $action_res = $service->postaction($self->name());
 
     if ($action_res->getstatuscode() != 200) {
-        printf("Error: Status: %i\n",$action_res->getstatuscode());
+        printf("\n\nERROR: %i\n\n%s\n",
+            $action_res->getstatuscode(),
+            $action_res->getcontent(),
+        );
         return 0;
     }
 
