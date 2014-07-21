@@ -12,6 +12,7 @@ use Net::UPnP::Device;
 
 use Net::UPnP::ControlPoint;
 use UPnP::NamedDevice;
+use LWP::UserAgent;
 
 sub new {
     my $class = shift;
@@ -67,19 +68,18 @@ sub children {
 sub _url2device {
     my ($self,$url) = @_;
 
-    # FIXME - just use normal http libraries!
+    my $ua = LWP::UserAgent->new;
+    $ua->agent(ref($self)."/0.1");
+    my $res = $ua->get($url);
 
-    my $http_req = Net::UPnP::HTTP->new();
-
-    return undef if ($url !~ m/http:\/\/([0-9a-z.]+)[:]*([0-9]*)\/(.*)/i);
-
-    my $post_res = $http_req->post($1, $2, "GET", '/'.$3, "", "");
-
-    my $post_content = $post_res->getcontent();
+    if (!$res->is_success) {
+        warn $res->status_line;
+        return undef;
+    }
 
     my $dev = Net::UPnP::Device->new();
     $dev->setssdp( "LOCATION: $url\r\n" );
-    $dev->setdescription($post_content);
+    $dev->setdescription($res->decoded_content());
 
     return $dev;
 }
