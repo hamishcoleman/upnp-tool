@@ -7,6 +7,9 @@ use strict;
 
 use base qw(HC::Tree::Node);
 
+use Net::UPnP::HTTP;
+use Net::UPnP::Device;
+
 use HC::Net::UPnP::ControlPoint;
 use UPnP::NamedDevice;
 
@@ -54,6 +57,27 @@ sub children {
     return @children;
 }
 
+sub _url2device {
+    my ($self,$url) = @_;
+
+    # FIXME - just use normal http libraries!
+
+    my $http_req = Net::UPnP::HTTP->new();
+
+    return undef if ($url !~ m/http:\/\/([0-9a-z.]+)[:]*([0-9]*)\/(.*)/i);
+
+    my $post_res = $http_req->post($1, $2, "GET", '/'.$3, "", "");
+
+    my $post_content = $post_res->getcontent();
+
+    my $dev = Net::UPnP::Device->new();
+    $dev->setssdp( "LOCATION: $url\r\n" );
+    $dev->setdescription($post_content);
+
+    return $dev;
+}
+
+
 sub search {
     my $self = shift;
     my $filter = shift;
@@ -64,7 +88,7 @@ sub search {
         return $self->SUPER::search($filter,@_);
     }
 
-    my $device = $self->{ControlPoint}->getdevicebyurl($filter);
+    my $device = $self->_url2device($filter);
     $node = UPnP::NamedDevice->new($device);
     $node->parent($self);
 
