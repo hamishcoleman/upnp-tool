@@ -10,7 +10,7 @@ use base qw(HC::Tree::Node);
 use Net::UPnP::HTTP;
 use Net::UPnP::Device;
 
-use HC::Net::UPnP::ControlPoint;
+use Net::UPnP::ControlPoint;
 use UPnP::NamedDevice;
 
 sub new {
@@ -21,7 +21,7 @@ sub new {
     # TODO - config args
 
     # For now, we are just using the Net::UPnP libraries
-    $self->{ControlPoint} = HC::Net::UPnP::ControlPoint->new();
+    $self->{ControlPoint} = Net::UPnP::ControlPoint->new();
     $self->name($class);
     
     return $self;
@@ -38,8 +38,15 @@ sub children {
         return @{$self->{children}};
     }
 
-    my @devices;
-    @devices = $self->{ControlPoint}->getfiltereddevices();
+    # First, get a list that probably contains duplicates
+    my @unfiltered = $self->{ControlPoint}->search();
+
+    # then deduplicate the list on the control location
+    my %seen;
+    for my $device (@unfiltered) {
+        $seen{$device->getlocation()} = $device;
+    }
+    my @devices = values(%seen);
 
     # Separate in to same-named items
     my %names;
