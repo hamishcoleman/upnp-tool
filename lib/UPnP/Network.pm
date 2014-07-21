@@ -7,7 +7,6 @@ use strict;
 
 use base qw(HC::Tree::Node);
 
-use Net::UPnP::HTTP;
 use Net::UPnP::Device;
 
 use Net::UPnP::ControlPoint;
