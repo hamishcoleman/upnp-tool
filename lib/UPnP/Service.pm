@@ -76,6 +76,16 @@ sub getscpd {
         return undef;
     }
 
+    if ($res->header('x-died')) {
+        # My Samsung Optical drive claims "transfer-encoding: chunked" when
+        # in fact it is not, causing an error like this.
+
+        # Let the user know that something horrid is going on..
+        warn($res->header('x-died')."\n");
+        warn("WARNING: Looks like a broken device at $scpdurl");
+        return undef;
+    }
+
     # TODO - check and return errors?
 
     $self->{scpd} = $res->decoded_content();

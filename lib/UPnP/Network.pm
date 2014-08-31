@@ -76,6 +76,16 @@ sub _url2device {
         return undef;
     }
 
+    if ($res->header('x-died')) {
+        # My Samsung Optical drive claims "transfer-encoding: chunked" when
+        # in fact it is not, causing an error like this.
+
+        # Let the user know that something horrid is going on..
+        warn($res->header('x-died')."\n");
+        warn("WARNING: Looks like a broken device at $url");
+        return undef;
+    }
+
     my $dev = Net::UPnP::Device->new();
     $dev->setssdp( "LOCATION: $url\r\n" );
     $dev->setdescription($res->decoded_content());
@@ -95,6 +105,9 @@ sub search {
     }
 
     my $device = $self->_url2device($filter);
+    if (!defined($device)) {
+        return undef;
+    }
     $node = UPnP::NamedDevice->new($device);
     $node->parent($self);
 

@@ -25,15 +25,19 @@ sub name {
 # FIXME - use an xml parser!
 sub children {
     my $self = shift;
+    my @children;
 
     my $scpd = $self->parent()->getscpd();
+    if (!defined($scpd)) {
+        # something went wrong with fetching the scpd
+        return @children;
+    }
     if ($scpd !~ m/<actionList>(.*)<\/actionList>/si) {
-        # something is wrong with the scpd
-        return undef;
+        # something is wrong with the scpd data
+        return @children;
     }
     my $actionlist = $1;
 
-    my @children;
     while ($actionlist =~ m/<action>(.*?)<\/action>/sgi) {
         my $node = UPnP::Service::Action->new($1);
         $node->parent($self);
