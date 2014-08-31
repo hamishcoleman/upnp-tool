@@ -20,6 +20,7 @@ sub name {
     return $self->data();
 }
 
+#direction in or out ?
 
 #sub set val ?
 

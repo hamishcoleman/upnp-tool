@@ -43,6 +43,17 @@ sub children {
 # Make an RPC call to the action described by $self
 sub call {
     my $self = shift;
+    my %args = (
+        @_,
+    );
+
+    # TODO - check the direction of the arg (in or out) ?
+    for my $child ($self->children()) {
+        if (!defined($args{$child->name()})) {
+            # we are missing an arg, bail out
+            return undef;
+        }
+    }
 
     # TODO - check that all our children have args
     # TODO - construct action post
@@ -51,7 +62,7 @@ sub call {
     # HACK, WTF, FIXME - why is this wrapped in an Array
     my $service = ($self->parent()->parent()->data())[0];
 
-    my $action_res = $service->postaction($self->name());
+    my $action_res = $service->postaction($self->name(),\%args);
 
     if ($action_res->getstatuscode() != 200) {
         printf("\n\nERROR: %i\n\n%s\n",
