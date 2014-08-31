@@ -6,7 +6,6 @@ use strict;
 #
 
 use base qw(HC::Tree::Node);
-use HC::Net::UPnP::Service;
 use UPnP::ServiceType;
 
 sub new {
@@ -27,7 +26,7 @@ sub children {
     my $self = shift;
     my $device = $self->data();
 
-    my @services = HC::Net::UPnP::Service->import($device->getservicelist());
+    my @services = $device->getservicelist();
 
     # Separate in to same-typed items
     my %types;
