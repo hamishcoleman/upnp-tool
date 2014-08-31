@@ -23,6 +23,7 @@ my $option = {
 };
 my @option_list = (
     "verbose|v+",
+    "recurse|r",
     "debug",
 );
 
@@ -30,7 +31,9 @@ sub main() {
     HC::Common::do_options($option,@option_list);
     return if (defined($option->{help}));
 
+    # TODO - use a better hack for passing various options
     $CommandLine::VERBOSE = $option->{verbose};
+    $CommandLine::RECURSE = $option->{recurse};
 
     my $result = CommandLine->HANDLE(@ARGV);
     if (!defined($result)) {

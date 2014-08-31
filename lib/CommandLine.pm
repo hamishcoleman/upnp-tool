@@ -7,13 +7,14 @@ use UPnP::Network;
 use Data::Dumper;
 
 our $VERBOSE = 0;
+our $RECURSE = 0;
 
 sub HANDLE {
     my $class = shift;
     my $self = {};
     bless $self, $class;
 
-    # TODO - figure out a nicer hack than this for verbose mode
+    # TODO - figure out a nicer hack than this for various modes
     $HC::Tree::Node::VERBOSE=$VERBOSE;
 
     my @searchpath;
@@ -37,7 +38,17 @@ sub HANDLE {
 
     for my $node (@nodes) {
         next if (!defined($node));
-        print $node->to_string_treenode();
+
+        if ($RECURSE) {
+            my $depth=0;
+            if (defined($node->parent())) {
+                print $node->parent->to_string_path();
+                $depth = scalar($node->path())-1;
+            }
+            print $node->to_string_recurse(depth=>$depth);
+        } else {
+            print $node->to_string_treenode();
+        }
 
         # if we have dug deep enough ..
         if ($node->can('call')) {
