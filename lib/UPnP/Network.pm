@@ -29,6 +29,9 @@ sub new {
 
 # FIXME
 # - this queries the entire network, we could filter based on needs
+# - because the controlpoint search function waits for network replies,
+#   this is always slow - we should cache the device list on disk.
+#
 sub children {
     my $self = shift;
 
@@ -38,8 +41,16 @@ sub children {
         return @{$self->{children}};
     }
 
+    my @unfiltered;
+
     # First, get a list that probably contains duplicates
-    my @unfiltered = $self->{ControlPoint}->search();
+    eval {
+        $SIG{PIPE} = 'IGNORE';
+        # if the broadcast packets have an invalid LOCATION in them then we
+        # end up with a SIGPIPE, which normally kills perl.
+        # FIXME - spit out an error message if this occurs
+        @unfiltered = $self->{ControlPoint}->search();
+    };
 
     # then deduplicate the list on the control location
     my %seen;
