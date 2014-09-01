@@ -12,6 +12,8 @@ use Net::UPnP::Device;
 use Net::UPnP::ControlPoint;
 use UPnP::NamedDevice;
 use LWP::UserAgent;
+use Storable;
+use File::Spec;
 
 sub new {
     my $class = shift;
@@ -27,10 +29,43 @@ sub new {
     return $self;
 }
 
+# A quick set of hacky routines to cache data
+# - TODO - this lookw like a good candidate for generalising into a lib
+
+sub _cachefile_name {
+    my ($self) = @_;
+    return File::Spec->catdir($ENV{'HOME'},'.upnp.network.cache');
+}
+
+sub _cachefile_validate {
+    my ($self) = @_;
+    my $mtime = (stat($self->_cachefile_name()))[9];
+    if (!defined($mtime)) {
+        return 0;
+    }
+    my $age = time() - $mtime;
+    # FIXME - use the "CACHE-CONTROL:" ssdp header to gauge validity
+    if ($age < 300) {
+        return 1;
+    } else {
+        return 0;
+    }
+}
+
+sub _cachefile_load {
+    my ($self) = @_;
+    return retrieve($self->_cachefile_name());
+}
+
+sub _cachefile_save {
+    my ($self,$data) = @_;
+    store($data,$self->_cachefile_name());
+}
+
 # FIXME
-# - this queries the entire network, we could filter based on needs
-# - because the controlpoint search function waits for network replies,
-#   this is always slow - we should cache the device list on disk.
+# - we could ask the controlpoint to filter based on the upstream search terms
+#   but that would probably require layer violations.  With caching, it is not
+#   too bad
 #
 sub children {
     my $self = shift;
@@ -43,14 +78,19 @@ sub children {
 
     my @unfiltered;
 
-    # First, get a list that probably contains duplicates
-    eval {
-        $SIG{PIPE} = 'IGNORE';
-        # if the broadcast packets have an invalid LOCATION in them then we
-        # end up with a SIGPIPE, which normally kills perl.
-        # FIXME - spit out an error message if this occurs
-        @unfiltered = $self->{ControlPoint}->search();
-    };
+    if ($self->_cachefile_validate()) {
+        @unfiltered = @{$self->_cachefile_load()};
+    } else {
+        # First, get a list that probably contains duplicates
+        eval {
+            $SIG{PIPE} = 'IGNORE';
+            # if the broadcast packets have an invalid LOCATION in them then we
+            # end up with a SIGPIPE, which normally kills perl.
+            # FIXME - spit out an error message if this occurs
+            @unfiltered = $self->{ControlPoint}->search();
+        };
+        $self->_cachefile_save(\@unfiltered);
+    }
 
     # then deduplicate the list on the control location
     my %seen;
