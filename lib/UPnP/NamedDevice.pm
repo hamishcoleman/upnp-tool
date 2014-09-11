@@ -23,6 +23,9 @@ sub _add_devices {
     push @{$devices}, @_;
 
     my $name = $devices->[0]->getfriendlyname();
+    if (!$name) {
+        warn ("could not getfriendlyname!");
+    }
 
     for my $device (@{$devices}) {
         if ($device->getfriendlyname() ne $name) {
@@ -31,6 +34,7 @@ sub _add_devices {
             die "mismatched named devices $name and $device->getfriendlyname()";
         }
     }
+
     $self->name($name);
     $self->data($devices);
 

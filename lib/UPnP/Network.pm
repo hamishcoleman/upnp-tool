@@ -62,6 +62,29 @@ sub _cachefile_save {
     store($data,$self->_cachefile_name());
 }
 
+# HACK!
+# look at the description and try to fixup any possible chunked transfer
+# encoding.  The HTTP library used by Net::UPnP does not support it and
+# has just passed it through unaltered - yuk!
+sub _HACK_fix_chunks {
+    my ($device) = @_;
+
+    return if ($device->getdescription() !~ m/^[0-9a-f]+\r\n/i);
+
+    my $old_description = $device->getdescription();
+    my $new_description = '';
+
+    while ($old_description) {
+        if ($old_description =~ s/^([0-9a-f]+)\r\n//i) {
+            $new_description.= substr($old_description,0,hex($1),'');
+            substr($old_description,0,2,''); # remove the final crnl
+        } else {
+            die("Could not apply hack to fix chunked encoding");
+        }
+    }
+    $device->setdescription($new_description);
+}
+
 # FIXME
 # - we could ask the controlpoint to filter based on the upstream search terms
 #   but that would probably require layer violations.  With caching, it is not
@@ -98,6 +121,10 @@ sub children {
         $seen{$device->getlocation()} = $device;
     }
     my @devices = values(%seen);
+
+    for my $device (@devices) {
+        _HACK_fix_chunks($device);
+    }
 
     # Separate in to same-named items
     my %names;
