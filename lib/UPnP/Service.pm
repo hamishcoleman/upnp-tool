@@ -83,7 +83,8 @@ sub getscpd {
         # Let the user know that something horrid is going on..
         warn($res->header('x-died')."\n");
         warn("WARNING: Looks like a broken device at $scpdurl");
-        return undef;
+        #print ("SCPD: ",$res->decoded_content(),"\n");
+        #return undef;
     }
 
     # TODO - check and return errors?

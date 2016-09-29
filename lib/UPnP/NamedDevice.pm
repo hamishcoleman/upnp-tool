@@ -25,6 +25,7 @@ sub _add_devices {
     my $name = $devices->[0]->getfriendlyname();
     if (!$name) {
         warn ("could not getfriendlyname!");
+        #$name = 'unknown'.time();
     }
 
     for my $device (@{$devices}) {
