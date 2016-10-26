@@ -15,6 +15,8 @@ use LWP::UserAgent;
 use Storable;
 use File::Spec;
 
+use HC::Cache::Dir;
+
 sub new {
     my $class = shift;
 
@@ -25,41 +27,26 @@ sub new {
     # For now, we are just using the Net::UPnP libraries
     $self->{ControlPoint} = Net::UPnP::ControlPoint->new();
     $self->name($class);
-    
+
+    $self->_handle_args(@_);
+
+    $self->{cache} = HC::Cache::Dir->new();
+    $self->{cache}->set_cachedir(File::Spec->catdir(
+        $ENV{'HOME'},
+        '.cache',
+        'upnp',
+    ));
+
+    # FIXME - use the CACHE-CONTROL header for ages
+    # (which would probably need the cache module to support getnext/getall)
+    $self->{cache}->set_maxage(1800);
+
     return $self;
-}
-
-# A quick set of hacky routines to cache data
-# - TODO - this lookw like a good candidate for generalising into a lib
-
-sub _cachefile_name {
-    my ($self) = @_;
-    return File::Spec->catdir($ENV{'HOME'},'.upnp.network.cache');
-}
-
-sub _cachefile_validate {
-    my ($self) = @_;
-    my $mtime = (stat($self->_cachefile_name()))[9];
-    if (!defined($mtime)) {
-        return 0;
-    }
-    my $age = time() - $mtime;
-    # FIXME - use the "CACHE-CONTROL:" ssdp header to gauge validity
-    if ($age < 300) {
-        return 1;
-    } else {
-        return 0;
-    }
-}
-
-sub _cachefile_load {
-    my ($self) = @_;
-    return retrieve($self->_cachefile_name());
 }
 
 sub _cachefile_save {
     my ($self,$data) = @_;
-    store($data,$self->_cachefile_name());
+    return $self->{cache}->put('network.cache');
 }
 
 # HACK!
@@ -101,8 +88,9 @@ sub children {
 
     my @unfiltered;
 
-    if ($self->_cachefile_validate()) {
-        @unfiltered = @{$self->_cachefile_load()};
+    my $cached = $self->{cache}->get('network.cache');
+    if (defined($cached)) {
+        @unfiltered = @{$cached};
     } else {
         # First, get a list that probably contains duplicates
         eval {
@@ -112,7 +100,7 @@ sub children {
             # FIXME - spit out an error message if this occurs
             @unfiltered = $self->{ControlPoint}->search();
         };
-        $self->_cachefile_save(\@unfiltered);
+        $self->{cache}->put('network.cache',\@unfiltered);
     }
 
     # then deduplicate the list on the control location
